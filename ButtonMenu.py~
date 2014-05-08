@@ -1,0 +1,19 @@
+# __author__ = 'Phi'
+import pygame, math, sys,  random, math
+from pygame.locals import *
+
+
+
+# ******************************************
+
+class ButtonMenu( pygame.Rect):
+
+
+    def __init__( self, pFont, pStr, pPos, pColor ):
+
+        cTextImg = pFont.render( pStr, 1, pColor)
+
+        
+        
+    def draw( self ) :
+        pSurfDest.blit( textImg, (lX, self.yLinePrint) )
