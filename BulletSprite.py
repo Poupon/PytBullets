@@ -64,12 +64,11 @@ class BulletSprite( pygame.sprite.Sprite):
 
 
         if self.cMoving  == True:
-
-        # A t on touche ?
-                self.cMoving = self.cMyWorld.resolveMoving( self )
-                if  self.cMoving == False :
-                    # oui 
-                    return self.cMoving;
+            # A t on touche ?
+            self.cMoving = self.cMyWorld.resolveMoving( self )
+            if  self.cMoving == False :
+                # oui 
+                return self.cMoving;
 
 
         self.position = self.cNewPosition

@@ -40,7 +40,7 @@ class Game:
             self.cSoundGameWin = None
             self.cSoundGameOver = None
         else:
-            print "MaxChannel:" , pygame.mixer.get_num_channels()
+       #     print "MaxChannel:" , pygame.mixer.get_num_channels()
 
 
             self.cSoundFire = pygame.mixer.Sound( "Fire.wav" )
@@ -151,19 +151,22 @@ class Game:
                 # -----------------------------
                 # on teste si on a appuyer sur une touche 
             elif hasattr( lEvent, 'key'):                            
-                if lEvent.key == K_UP:
-                    self.cWorld.cState = STATE_TARGET
+                if lEvent.key == K_UP and lEvent.type == pygame.KEYDOWN:
+                    self.cWorld.cState = self.cWorld.STATE_TARGET
                     self.cBulletGroup.empty()
-                    self.cBullet = BulletSprite.BulletSprite( self.cWorld.getRandomBullet(), gWorld )
-# random.randint( 1, gWorld.MAX_BULLET_TYPE ), gWorld )
+                    self.cBullet = BulletSprite.BulletSprite( self.cWorld.getRandomBullet(), self.cWorld )
                     self.cBulletGroup.add(self.cBullet)
-                    #    pBullet.init(  random.randint( 1, gWorld.MAX_BULLET_TYPE), gWorld )
 
                 elif lEvent.key == K_r:
                     self.cWorld.flipMemTabBullet()
 
+                elif lEvent.key == K_h and lEvent.type == pygame.KEYDOWN:
+                        self.cWorld.cModeHex = not self.cWorld.cModeHex
+
                 elif lEvent.key == K_ESCAPE:
                     sys.exit(0)
+            elif lEvent.type == pygame.QUIT:
+                sys.exit(0)
 
 
     
@@ -190,7 +193,7 @@ class Game:
                 # ============== Winner ? ==============
                 if self.cWorld.countAllBullet() == 0:
                 
-                    print "GameWin Game" 
+             #       print "GameWin Game" 
                     self.cWorld.gameWinAnimation( 300 )
                     self.restart = True
                     return False
@@ -209,7 +212,7 @@ class Game:
 
                     # ============= Game Over ? =============
                     if lResult == False :                        
-                        print "GameOver" 
+             #           print "GameOver" 
                         self.cWorld.gameOverAnimation( 200 )
                         self.restart = True
                         return False

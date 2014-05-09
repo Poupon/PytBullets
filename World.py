@@ -16,7 +16,7 @@ class World:
     BULLET_W = 40
     BULLET_H = 40
 
-    HEIGHT =  14
+    HEIGHT =  15
     WIDTH  = 17
     INIT_HEIGHT = 9
 
@@ -40,7 +40,7 @@ class World:
     STATE_FIRE=4
     STATE_TARGET = 10
     
-    
+    cModeHex = True
 
 
     cState=STATE_TARGET
@@ -91,17 +91,19 @@ class World:
         
         
         self.cBullW = self.cBullet[1].get_width()
+        self.cBullDw = self.cBullet[1].get_width()/2
+
         self.cBullH = self.cBullet[1].get_height()
         
 
         
-        gScreen = pygame.display.set_mode( (self.cBullW*self.WIDTH, 
+        gScreen = pygame.display.set_mode( (self.cBullW*self.WIDTH+self.cBullW/2, 
                                            ( self.cBullH+4)*self.HEIGHT) )
 
         gScreen.fill( (100,100,100) )
 
-        self.yLinePrint = (self.cBullH+2)*self.HEIGHT
-        self.yLineBullet = (int)(self.cBullH+1)*self.HEIGHT
+        self.yLinePrint =  (int)(self.cBullH+2)*self.HEIGHT
+        self.yLineBullet = (int)(self.cBullH)*self.HEIGHT
 
         
         self.cDebug = False
@@ -222,7 +224,20 @@ class World:
         
          #-----------------------------------------
     def set( self, pCoordWorld, pVal ) :
+
+        if pCoordWorld[0] < 0 :
+            pCoordWorld = ( 0, pCoordWorld[1])
+        elif  pCoordWorld[0] >= self.WIDTH:
+            pCoordWorld = ( self.WIDTH-1, pCoordWorld[1])
+
+        if  pCoordWorld[1] < 0 :
+            pCoordWorld = (  pCoordWorld[0], 0 )
+        elif pCoordWorld[1] >=  self.HEIGHT :
+            pCoordWorld = (  pCoordWorld[0], self.HEIGHT -1 )
+
         self.cTab[ pCoordWorld[1] ][ pCoordWorld[0]] = pVal
+
+         #-----------------------------------------
 
     def setMem( self, pCoordWorld, pVal ) :
         if self.cMemTabBullet != None:
@@ -245,16 +260,29 @@ class World:
 
   #      return ( ((int)((pCoordScreen[0]+self.cBullW/2)/self.cBullW)),
    #              ((int)((pCoordScreen[1]+self.cBullH/2)/self.cBullH))  )
-        return ( ((int)((pCoordScreen[0])/self.cBullW)),
-                 ((int)((pCoordScreen[1])/self.cBullH))  )
+
+        lY = (int)((pCoordScreen[1])/self.cBullH)
+
+        if self.cModeHex and lY %2 == 1 :
+            lX = (int)((pCoordScreen[0]-self.cBullW/2.0)/self.cBullW)
+        else:
+            lX = (int)((pCoordScreen[0])/self.cBullW)
+
+
+        return ( lX, lY  )
 
          #-----------------------------------------
          # Translete World  coordinate to Screencoordinate
     def world2Screen( self, pCoordWorld ):
 #        return ((int)(pCoordWorld[0]*self.cBullW-self.cBullW/2),
 #                (int)(pCoordWorld[1]*self.cBullH-self.cBullH/2))
-        return ((int)(pCoordWorld[0]*self.cBullW+self.cBullW/2),
-                (int)(pCoordWorld[1]*self.cBullH+self.cBullH/2))
+
+        if self.cModeHex and pCoordWorld[1] %2 == 1 :
+            lX = (int)(pCoordWorld[0]*self.cBullW+self.cBullW)
+        else:
+            lX = (int)(pCoordWorld[0]*self.cBullW+self.cBullW/2)
+     
+        return ( lX, (int)(pCoordWorld[1]*self.cBullH+self.cBullH/2))
 
         #-----------------------------------------
     def outOfWorld(  self, pCoordWorld ):
@@ -268,6 +296,9 @@ class World:
     def outOfScreen(  self, pCoordScreen ):
 
         if pCoordScreen[0]-self.WIDTH/2 < 0 :
+            return True
+
+        if pCoordScreen[0]+self.WIDTH/2 > gScreen.get_width() :
             return True
 
         lCoord = self.screen2World(pCoordScreen)
@@ -301,7 +332,7 @@ class World:
  
         #-----------------------------------------
         #-----------------------------------------
-        #------------------------------------
+        #-----------------------------------------
     def countAllBullet(self):
 
        lTotalCount =0
@@ -311,7 +342,7 @@ class World:
                if  self.get( (w, h) ) !=  0 :
                    lTotalCount += 1
 
-       print "countAllBullet :", lTotalCount
+#       print "countAllBullet :", lTotalCount
 
        return lTotalCount
 
@@ -333,7 +364,7 @@ class World:
 
        self.cLifeType = [];
 
-       for i in range( self.MAX_BULLET_TYPE):
+       for i in range(  self.MAX_BULLET_TYPE+1):
            if lCountBullet[i ] > 0:
                self.cLifeType.append( i )
        
@@ -350,7 +381,10 @@ class World:
             for w in range(self.WIDTH):
                 lBullet = self.get( (w, h) )
                 if lBullet !=  0 :
-                    pSurfDest.blit( self.cBullet[lBullet], (w*self.cBullW, h*self.cBullH))
+                    if self.cModeHex and h %2 ==1:
+                        pSurfDest.blit( self.cBullet[lBullet], (w*self.cBullW+self.cBullW/2, h*self.cBullH))
+                    else:
+                        pSurfDest.blit( self.cBullet[lBullet], (w*self.cBullW, h*self.cBullH))
 
                 # dessin des lignes pour le debuggage
 #            pygame.draw.line( pSurfDest, ( 200, 200, 200), (0, h*self.cBullH), (self.cBullW*self.WIDTH, h*self.cBullH))
@@ -373,16 +407,19 @@ class World:
 
         lX += 250 
 
+        lPos =  self.world2Screen( self.INIT_FIRE_POS )
+        lPos = ( lPos[0] +  self.cBullW, lPos[1] )
+
         lTypeBullet = self.cVoidBulletSurf
         for i in range( self.cShotRemain ):            
             if i==0:
                 lTypeBullet = self.cBullet[pNextBullet.cTypeColor]
             else:
                 lTypeBullet = self.cVoidBulletSurf
-
-            pSurfDest.blit( lTypeBullet , (lX, self.yLineBullet))
-
-            lX += self.BULLET_W
+                
+            pSurfDest.blit( lTypeBullet , lPos)
+                
+            lPos = ( lPos[0] +  self.cBullW, lPos[1] )
 
         self.cListButton.draw( pSurfDest )
 
@@ -394,9 +431,15 @@ class World:
         
         lInitScreenCoord = self.world2Screen( self.INIT_FIRE_POS);
 
+#        pygame.draw.line( pSurfDest, ( 200, 200, 200),  
+ #                        lInitScreenCoord, lDestScreenCoord, 4)
+
         pygame.draw.line( pSurfDest, ( 200, 200, 200),  
-                          lInitScreenCoord, lDestScreenCoord, 4)
-            
+                          lInitScreenCoord, pMousePos, 4)
+
+        #lDestScreenCoord = (lDestScreenCoord[0]-self.BULLET_W/2,lDestScreenCoord[1]-self.BULLET_H/2)
+#        pSurfDest.blit( self.cVoidBulletSurf , lDestScreenCoord )
+
          #-----------------------------------------
     def remplaceAll(self, pTarget, pNew):
         
@@ -410,15 +453,59 @@ class World:
         #-------------------- NEIGBOR --------------------------
         #-------------------------------------------------------
 
+    def getNeightborPosList( self, pPos, pNeightorPosList ):
+
+        
+     #   pNeightorPosList.extend( [ (pPos[0]-1, pPos[1]-1 ), (pPos[0]+0, pPos[1]-1 ),(pPos[0]+1, pPos[1]-1 ),
+      #                               (pPos[0]-1, pPos[1] ),(pPos[0]+1, pPos[1] ),
+       #                            (pPos[0]-1, pPos[1]+1 ), (pPos[0]+0, pPos[1]+1 ), (pPos[0]+1, pPos[1]+1 )] )
+                    
+        if self.cModeHex :
+
+            if pPos[1] %2 == 1 :            
+                pNeightorPosList.append((pPos[0]+0, pPos[1]-1 ))
+                pNeightorPosList.append((pPos[0]+1, pPos[1]-1 ))
+        
+                pNeightorPosList.append( (pPos[0]-1, pPos[1] ))
+                pNeightorPosList.append((pPos[0]+1, pPos[1] ))
+
+                pNeightorPosList.append((pPos[0]+0, pPos[1]+1 ))
+                pNeightorPosList.append((pPos[0]+1, pPos[1]+1 ))
+            else:            
+                pNeightorPosList.append((pPos[0]-1, pPos[1]-1 ))
+                pNeightorPosList.append((pPos[0]+0, pPos[1]-1 ))
+                
+                pNeightorPosList.append( (pPos[0]-1, pPos[1] ))
+                pNeightorPosList.append((pPos[0]+1, pPos[1] ))
+                
+                pNeightorPosList.append((pPos[0]-1, pPos[1]+1 ))
+                pNeightorPosList.append((pPos[0]+0, pPos[1]+1 ))
+        else:
+            pNeightorPosList.append((pPos[0]-1, pPos[1]-1 ))
+            pNeightorPosList.append((pPos[0]+0, pPos[1]-1 ))
+            pNeightorPosList.append((pPos[0]+1, pPos[1]-1 ))
+        
+            pNeightorPosList.append( (pPos[0]-1, pPos[1] ))
+            pNeightorPosList.append((pPos[0]+1, pPos[1] ))
+
+            pNeightorPosList.append((pPos[0]-1, pPos[1]+1 ))
+            pNeightorPosList.append((pPos[0]+0, pPos[1]+1 ))
+            pNeightorPosList.append((pPos[0]+1, pPos[1]+1 ))
+
+        return pNeightorPosList
+
+        #-------------------------------------------------------
+
         # detecte s'il y a un groupe de plus de 2 boules de meme type
 
     def countNeighbor( self, lPos, pTypeColor ):
         lCount = 1
         
-        NeightorPosList = [ (lPos[0]-1, lPos[1]-1 ), (lPos[0]+0, lPos[1]-1 ),(lPos[0]+1, lPos[1]-1 ),
-                                     (lPos[0]-1, lPos[1] ),(lPos[0]+1, lPos[1] ),
-                                     (lPos[0]-1, lPos[1]+1 ), (lPos[0]+0, lPos[1]+1 ), (lPos[0]+1, lPos[1]+1 )]
+        NeightorPosList = []
+        self.getNeightborPosList( lPos, NeightorPosList );
+#        print "==================== getNeightborPosList return " , len( NeightorPosList )
 
+       
         AlreadyDo = [lPos]
 
         while len(NeightorPosList) > 0 and lCount< 3:
@@ -435,9 +522,7 @@ class World:
 
                 if self.safeGet( lPos ) == pTypeColor:
                     lCount+=1
-                    NeightorPosList += ( (lPos[0]-1, lPos[1]-1 ), (lPos[0]+0, lPos[1]-1 ),(lPos[0]+1, lPos[1]-1 ),
-                                         (lPos[0]-1, lPos[1] ),(lPos[0]+1, lPos[1] ),
-                                         (lPos[0]-1, lPos[1]+1 ), (lPos[0]+0, lPos[1]+1 ), (lPos[0]+1, lPos[1]+1 ))
+                    self.getNeightborPosList( lPos, NeightorPosList );
 
         return lCount
         #-----------------------------------------
@@ -447,10 +532,8 @@ class World:
 
         lScore = 0
 
-
-        NeightorPosList = [ (lPos[0]-1, lPos[1]-1 ), (lPos[0]+0, lPos[1]-1 ),(lPos[0]+1, lPos[1]-1 ),
-                                     (lPos[0]-1, lPos[1] ),(lPos[0]+1, lPos[1] ),
-                                     (lPos[0]-1, lPos[1]+1 ), (lPos[0]+0, lPos[1]+1 ), (lPos[0]+1, lPos[1]+1 )]
+        NeightorPosList = []
+        self.getNeightborPosList( lPos, NeightorPosList );
 
         AlreadyDo = [lPos]
 
@@ -468,9 +551,7 @@ class World:
                 if self.safeGet( lPos ) == pTypeColor:
                     self.set(lPos,  pDestroyedBullet )
                     lScore += 1
-                    NeightorPosList += ( (lPos[0]-1, lPos[1]-1 ), (lPos[0]+0, lPos[1]-1 ),(lPos[0]+1, lPos[1]-1 ),
-                                         (lPos[0]-1, lPos[1] ),(lPos[0]+1, lPos[1] ),
-                                         (lPos[0]-1, lPos[1]+1 ), (lPos[0]+0, lPos[1]+1 ), (lPos[0]+1, lPos[1]+1 ))
+                    self.getNeightborPosList( lPos, NeightorPosList );              
 
 
         return lScore
@@ -488,7 +569,7 @@ class World:
     def setHole( self, pCoordWorld, pVal ) :
         self.cHoleTab[ pCoordWorld[1] ][ pCoordWorld[0]] = pVal
             
-          #-----------------------------------------
+        #-----------------------------------------
     def resolveHole( self,  pDestroyedBullet):
 
         lScore = 0
@@ -511,7 +592,10 @@ class World:
             
             if self.isWorldFull( lPos ) :
                 self.setHole( lPos, 1)
-                NeightorPosList += ( (lPos[0]-1, lPos[1]+1 ), (lPos[0]+0, lPos[1]+1 ), (lPos[0]+1, lPos[1]+1 ))              
+                if self.cModeHex :
+                    NeightorPosList += ( (lPos[0]-1, lPos[1]+1 ), (lPos[0]+0, lPos[1]+1 ))              
+                else :
+                    NeightorPosList += ( (lPos[0]-1, lPos[1]+1 ), (lPos[0]+0, lPos[1]+1 ), (lPos[0]+1, lPos[1]+1 ))              
 
 
         while len(NeightorPosList) > 0 :
@@ -526,22 +610,20 @@ class World:
               AlreadyDo.append( lPos )
               
               if self.isWorldFull( lPos) :
-                  NeightorPosList += ( (lPos[0]-1, lPos[1]-1 ), (lPos[0]+0, lPos[1]-1 ), (lPos[0]+1, lPos[1]-1 ),
-                                       (lPos[0]-1, lPos[1] ),(lPos[0]+1, lPos[1] ),
-                                       (lPos[0]-1, lPos[1]+1 ), (lPos[0]+0, lPos[1]+1 ), (lPos[0]+1, lPos[1]+1 ))      
+                  self.getNeightborPosList( lPos, NeightorPosList );              
                   self.setHole( lPos, 1)
 
         
         # repercute the result to the bullet tab
         for h in range(1,self.HEIGHT):
             for w in range(self.WIDTH):
-                if self.getHole((w,h)) == 0 and self.isWorldFull( (w,h)):
+                if self.getHole((w,h)) == 0 and self.isWorldFull( (w,h)) and pDestroyedBullet != None:
                     self.set( (w,h),  pDestroyedBullet )
                     lScore +=1
 
 
         return lScore
-         
+   
         #-------------------------------------------------------
         #-------------------------------------------------------
         #-------------------------------------------------------
@@ -552,7 +634,7 @@ class World:
 
     def scrollDownOneRow( self ):
 
-        print "scrollDownOneRow"
+ #       print "scrollDownOneRow"
         # detect if there are an bullet at the last line -> lose 
         for w in range(self.WIDTH):
             lBullet = self.get( (w, self.HEIGHT-1) )
@@ -561,14 +643,22 @@ class World:
                                     
         for h in range(self.HEIGHT-2, -1, -1):
             for w in range( self.WIDTH ):
-                self.set( (w, h+1), self.get( (w, h) ))                          
+                self.set( (w, h+1), self.get( (w, h) ))    
+
+
+        self.cScore += self.resolveHole(  self.cDestroyedBullet )
+        self.destroyAnimation(10  )
+        self.remplaceAll( self.cDestroyedBullet, 0 )
+
+
+
         return True
 
      
          #-----------------------------------------
     def scrollDownRows( self, nb ):
 
-        print "scrollDownRows " , nb
+ #       print "scrollDownRows " , nb
         for i in range( 0, nb):
             if self.scrollDownOneRow() == False:
                 return False
@@ -580,7 +670,7 @@ class World:
     
     def scrollDownRange( self ):
 
-        print "scrollDownRange"
+ #       print "scrollDownRange"
 
         self.cGame.playSound( self.cGame.cSoundScroll )
 
@@ -599,26 +689,34 @@ class World:
      #   print " 0 resolveMoving :", self.cShotRemain 
 
         
-        if  lWorldPos[1] < 0 :
+        if  lWorldPos[1] <= 0 :
             lWorldPos = (lWorldPos[0] ,0)
-            self.cShotRemain -= 1;
-            self.set( lWorldPos, pBullet.cTypeColor )
-            return False
+            if self.isWorldVoid( lWorldPos ):
+                self.doHole( pBullet, lWorldPos ) 
+                return False
+       ##    self.doHole( pBullet, lWorldPos )
+        ##    return False
 
-        
-        if self.isWorldVoid( lWorldPos ):
+       #     self.cShotRemain -= 1;
+        #    self.set( lWorldPos, pBullet.cTypeColor )     
+
+        elif self.isWorldVoid( lWorldPos ):
             return True # on continue de bouger
         
-
+        
         lWorldPos = self.screen2World( pBullet.position ) # la derniere position        
 
-        if  lWorldPos[1] < 0 :
+        if  lWorldPos[1] <= 0 :
             lWorldPos = (lWorldPos[0],0)
-            self.cShotRemain -= 1;
-            self.set( lWorldPos, pBullet.cTypeColor )
-            return False
-   
+    #        self.cShotRemain -= 1;
+     #       self.set( lWorldPos, pBullet.cTypeColor
+        self.doHole( pBullet, lWorldPos ) 
 
+        return False
+
+        #-----------------------------------------
+
+    def doHole( self, pBullet, lWorldPos ):
         lCount = self.countNeighbor( lWorldPos, pBullet.cTypeColor )        
 
         if lCount >= 3 :
@@ -638,7 +736,6 @@ class World:
             self.cShotRemain -= 1;
             self.set( lWorldPos, pBullet.cTypeColor )
 
-        return False
 
         #-----------------------------------------
     def flipMemTabBullet( self ):
