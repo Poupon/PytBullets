@@ -13,21 +13,8 @@ gScreen = pygame.display.set_mode((1024, 768))
 # ******************************************
 
 class World:
-    BULLET_W = 40
-    BULLET_H = 40
 
-    HEIGHT =  15
-    WIDTH  = 17
-    INIT_HEIGHT = 9
-
-    MAX_BULLET_COLOR = 6
-    
-    INIT_FIRE_POSW = WIDTH/2
-
-    INIT_FIRE_POSH = HEIGHT-1
-    INIT_FIRE_POS  = ( INIT_FIRE_POSW, INIT_FIRE_POSH)
-
-    MAX_SHOT =  6
+  
 
     pygame.font.init()
 
@@ -40,7 +27,6 @@ class World:
     STATE_FIRE=4
     STATE_TARGET = 10
     
-    cModeHex = True
 
 
     cState=STATE_TARGET
@@ -49,7 +35,25 @@ class World:
     cDialogOk = False
 
         #-----------------------------------------
-    def __init__(self, pGame ):
+    def __init__( self,  pGame, pDebug, lModeHex, lColumns, lLines, lBulletSize, lColors, lInitFillLines, lMaxShot ):
+
+        self.cModeHex = lModeHex
+        self.WIDTH  = lColumns
+        self.BULLET_W = lBulletSize
+        self.BULLET_H = lBulletSize
+
+        self.HEIGHT =  lLines
+        self.INIT_HEIGHT = lInitFillLines
+        
+        self.MAX_BULLET_COLOR = lColors
+          
+        self.INIT_FIRE_POSW = self.WIDTH/2
+
+        self.INIT_FIRE_POSH = self.HEIGHT-1
+        self.INIT_FIRE_POS  = ( self.INIT_FIRE_POSW, self.INIT_FIRE_POSH)
+
+        self.MAX_SHOT =  lMaxShot
+
 
         World.sTheWorld = self
 
@@ -61,13 +65,12 @@ class World:
         self.cBullet =[ 0, # pygame.image.load( 'Ice.png'),
                         pygame.transform.scale( pygame.image.load( 'Green.png'), (self.BULLET_W, self.BULLET_H)),
                         pygame.transform.scale( pygame.image.load( 'Indigo.png'),(self.BULLET_W, self.BULLET_H)),
-                        pygame.transform.scale( pygame.image.load( 'Magenta.png'),(self.BULLET_W, self.BULLET_H)),
-                        pygame.transform.scale( pygame.image.load( 'Red.png'),(self.BULLET_W, self.BULLET_H)),
+                        pygame.transform.scale( pygame.image.load( 'Magenta.png'),(self.BULLET_W, self.BULLET_H)), 
+                       pygame.transform.scale( pygame.image.load( 'Crimson.png'),(self.BULLET_W, self.BULLET_H)),
                         pygame.transform.scale( pygame.image.load( 'Teal.png'),(self.BULLET_W, self.BULLET_H)),
                         pygame.transform.scale( pygame.image.load( 'Yellow.png'),(self.BULLET_W, self.BULLET_H)),
-
+                        pygame.transform.scale( pygame.image.load( 'Red.png'),(self.BULLET_W, self.BULLET_H)),
                         pygame.transform.scale( pygame.image.load( 'Silver.png'),(self.BULLET_W, self.BULLET_H)),
-                        pygame.transform.scale( pygame.image.load( 'Crimson.png'),(self.BULLET_W, self.BULLET_H)),
                         pygame.transform.scale( pygame.image.load( 'Moss.png'),(self.BULLET_W, self.BULLET_H)),
                         pygame.transform.scale( pygame.image.load( 'Clouds.png'),(self.BULLET_W, self.BULLET_H)),
                         pygame.transform.scale( pygame.image.load( 'Amber.png'),(self.BULLET_W, self.BULLET_H)),
@@ -106,9 +109,8 @@ class World:
         self.yLineBullet = (int)(self.cBullH)*self.HEIGHT
 
         
-        self.cDebug = False
+        self.cDebug = pDebug
 
-        self.cDebugTabBullet = False
 
         self.cMemTabBullet = None
 

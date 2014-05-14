@@ -1,60 +1,116 @@
 __author__ = 'Phi'
-import pygame, math, sys,  random, math
+import pygame, math, sys,  random, math,  getopt
+
 from pygame.locals import *
 
 import BulletSprite
 import World
-import ButtonMenu
 
 # **********************************************************
 class Game:
 
-    def __init__(self ):
+    def usage(self):
+        print "Pytbullet 2014 (ppoupon@free.fr)"
+        print " [-h/help] "
+        print " [x/hex]                       use hex map        : default"
+        print " [o/oct]                       use octogonal map"
+        print " [w:size/width=size]           columns number     : default = 17" 
+        print " [l:size/lines=size]          lines number       : default = 15" 
+        print " [s:size/bullet_size=size]     bullets size       : default = 40"
+        print " [f:size/frame=size]           frame rate         : default = 50"
+        print " [i:size/init_fill_lines=size] initial fill lines : default =  9"
+        
+        
+# ===========================================
+
+    def __init__(self, pArgv ):
+            
+            
+        try:
+            lOpts, lArgs = getopt.getopt( pArgv, "hd:sxow:l:b:f:c:i:m:", 
+                                          ["help","debug:=","sound","hex","oct","width=","lines=","bullet_size=","frame=", "colors=", "init_fill_lines=", "max_shot="])
+            
+        except getopt.GetoptError: 
+            self.usage()
+            sys.exit(2)   
+
+        lDebug =False
+        self.cSoundUse = False
+        lModeHex = True;
+        lColumns = 17
+        lLines   = 15
+        lBulletSize = 40
+        self.cFrame = 50
+        lInitFillLines=9
+        lColors=6
+        lMaxShot=8
+                                          
+        for lOpt, lArg in lOpts: 
+      #      print "Op:", lOpt , " Arg=", lArg
+            if lOpt in ("-h", "--help"):
+                self.usage()                     
+                sys.exit()  
+            elif lOpt in ("-x", "--hex"):
+                lModeHex = True                
+            elif lOpt in ("-s", "--sound"):
+                self.cSoundUse= True                
+            elif lOpt in ("-o", "--oct"):
+                lModeHex = False
+            elif lOpt in ("-d", "--debug"):
+                lDebug = int(lArg)
+            elif lOpt in ("-w", "--width"):
+                lColumns = int(lArg)
+                if lColumns < 5 or lColumns > 100 :
+                    print "Bad lColumn number ", lColumns
+                    sys.exit(2)
+
+            elif lOpt in ("-l", "--lines"):
+                lLines = int(lArg)
+                if  lLines < 5 or lLines > 100 :
+                    print "Bad line number ", lLines
+                    sys.exit(2)
+            elif lOpt in ("-b", "--bullet_size"):
+                lBulletSize = int(lArg)
+                if lBulletSize < 3 or lBulletSize > 100:
+                    print "Bad bullet size ", lBulletSize
+                    sys.exit(2)
+            elif lOpt in ("-f", "--frame"):
+                lFrame  = int(lArg)
+                if lFrame >= 20 and lFrame <= 100 :
+                    self.cFrame = lFrame
+                else:
+                    print "Bad Frame rate ", lFrame
+                    sys.exit(2)        
+            elif lOpt in ("-c", "--colors"):
+                lColors  = int(lArg)
+                if lColors< 2 or lColors > 12 :
+                    print "Bad colors number ", lColors
+                    sys.exit(2)        
+            elif lOpt in ("-i", "--init_fill_lines"):
+                lInitFillLines  = int(lArg)
+                if lInitFillLines< 2 or lInitFillLines > lLines-2 :
+                    print "Bad init fill lines number ", lInitFillLines
+                    sys.exit(2)        
+      
+            elif lOpt in ("-m", "--max_shot"):
+                lMaxShot  = int(lArg)
+                if lMaxShot < 2 or  lMaxShot> 12 :
+                    print "Bad Max Shot ", lMaxShot
+                    sys.exit(2)        
+      
+
+                
+
+
+        self.initSound()
+
 
         self.cScreen = pygame.display.set_mode((1024, 768))
         self.cClock  = pygame.time.Clock()
 
-        self.cSoundUse = True
 
-        if self.cSoundUse :
-            self.cSoundOn = True
-        else:
-            self.cSoundOn = False
-
-
-        if self.cSoundUse :
-
-            self.cMixer     = pygame.mixer.init(44100, -16, 2, 4096)
-
-            if self.cMixer == None:
-                self.cSoundUse = self.cSoundOn = False
-            
-
-        if self.cSoundUse == False:
-
-            self.cSoundFire = None
-            self.cSoundPut =None
-            self.cSoundScroll = None
-            
-            self.cSoundDestroy = None
-            self.cSoundGameWin = None
-            self.cSoundGameOver = None
-        else:
-       #     print "MaxChannel:" , pygame.mixer.get_num_channels()
-
-
-            self.cSoundFire = pygame.mixer.Sound( "Fire.wav" )
-            self.cSoundPut = pygame.mixer.Sound( "Put.wav" )
-            self.cSoundScroll = pygame.mixer.Sound( "Scroll.wav" )
-            
-            self.cSoundDestroy = pygame.mixer.Sound( "Destroy.wav" )
-            self.cSoundGameWin = pygame.mixer.Sound( "GameWin.wav" )
-            self.cSoundGameOver = pygame.mixer.Sound( "GameOver.wav" )
-            
-
-
-
-        self.cWorld = World.World(self);
+        self.cWorld = World.World( self, lDebug, lModeHex, lColumns, lLines, lBulletSize, lColors, lInitFillLines, lMaxShot);
+        
         self.cRect  =  self.cScreen.get_rect()
         self.cBullet = BulletSprite.BulletSprite( random.randint( 1, self.cWorld.MAX_BULLET_TYPE ), self.cWorld )
         
@@ -68,6 +124,49 @@ class Game:
         self.resetGame()
 
         #====================================
+
+        
+    def initSound( self ):
+
+        if self.cSoundUse :
+            self.cSoundOn = True
+        else:
+            self.cSoundOn = False
+
+
+        if self.cSoundUse :
+
+    #        self.cMixer     = pygame.mixer.init(44100, -16, 2, 4096)
+            self.cMixer     = pygame.mixer.init()
+
+            if self.cMixer == None:
+                self.cSoundUse = self.cSoundOn = False
+                print "Sound initialization failed ! ", pygame.get_error()
+
+        if self.cSoundUse == False:
+
+            self.cSoundFire = None
+            self.cSoundPut =None
+            self.cSoundScroll = None
+            
+            self.cSoundDestroy = None
+            self.cSoundGameWin = None
+            self.cSoundGameOver = None
+        else:
+            print "MaxChannel:" , pygame.mixer.get_num_channels()
+
+
+            self.cSoundFire = pygame.mixer.Sound( "Fire.wav" )
+            self.cSoundPut = pygame.mixer.Sound( "Put.wav" )
+            self.cSoundScroll = pygame.mixer.Sound( "Scroll.wav" )
+            
+            self.cSoundDestroy = pygame.mixer.Sound( "Destroy.wav" )
+            self.cSoundGameWin = pygame.mixer.Sound( "GameWin.wav" )
+            self.cSoundGameOver = pygame.mixer.Sound( "GameOver.wav" )
+            
+
+        #====================================
+
 
     def resetGame( self ):
 
@@ -177,7 +276,7 @@ class Game:
 
             # USER INPUT
 
-            self.cDeltaTime = self.cClock.tick(50)
+            self.cDeltaTime = self.cClock.tick( self.cFrame )
 
 
             # ====================
@@ -268,7 +367,9 @@ class Game:
 
 # MAIN
 
-lGame = Game()
+pygame.init()
+
+lGame = Game( sys.argv[1:] )
 
 while 1 :
     while lGame.restart == False:           
@@ -278,3 +379,6 @@ while 1 :
 
     lGame.restart = False
     lGame.resetGame()
+
+    if lGame.cSoundUse:
+        pygame.mixer.quit()
